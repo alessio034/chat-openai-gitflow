@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bots de Ventas</title>
+
+    <!-- cdn tailwind -->
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script>
+      // colores y fuente personalizados del chat
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              marca: {
+                50: "#eef7ff",
+                400: "#38bdf8",
+                500: "#0ea5e9",
+                600: "#0284c7",
+                900: "#0c1a2b"
+              }
+            },
+            fontFamily: {
+              sans: ["Poppins", "ui-sans-serif", "system-ui"]
+            },
+            keyframes: {
+              aparecer: {
+                "0%": { opacity: "0", transform: "translateY(8px)" },
+                "100%": { opacity: "1", transform: "translateY(0)" }
+              }
+            },
+            animation: {
+              aparecer: "aparecer .3s ease-out"
+            }
+          }
+        }
+      };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-marca-900 to-indigo-950 font-sans flex items-center justify-center p-4">
+
+  <main class="w-full max-w-2xl h-[90vh] flex flex-col rounded-3xl overflow-hidden bg-white/10 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/40">
+
+    <!-- encabezado -->
+    <header class="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-marca-600 to-indigo-600">
+      <div class="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center text-2xl">🤖</div>
+      <div class="flex-1">
+        <h1 class="text-white text-lg font-semibold leading-tight">Chat con IA</h1>
+        <p class="text-marca-50/80 text-xs flex items-center gap-1">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          Asistente de ventas · en línea
+        </p>
+      </div>
+    </header>
+
+    <!-- mensajes -->
+    <section id="chat" class="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-4">
+      <div class="flex gap-2 animate-aparecer">
+        <div class="w-8 h-8 shrink-0 rounded-full bg-marca-500 flex items-center justify-center text-sm">🤖</div>
+        <div id="respuesta" class="max-w-[80%] rounded-2xl rounded-tl-sm bg-white/90 text-slate-800 px-4 py-2.5 text-sm shadow">
+          Hola, ¿cómo te ayudo?
+        </div>
+      </div>
+    </section>
+
+    <!-- formulario -->
+    <footer class="p-4 bg-black/20 border-t border-white/10">
+      <label for="mensaje" class="sr-only">Ingrese su consulta</label>
+      <div class="flex items-end gap-2">
+        <textarea id="mensaje" rows="1" placeholder="Ingrese su consulta..."
+          class="flex-1 resize-none max-h-32 rounded-2xl bg-white/10 text-white placeholder-white/40 px-4 py-3 text-sm border border-white/10 focus:outline-none focus:ring-2 focus:ring-marca-400"></textarea>
+        <button id="btnEnviar" onclick="consultarChat()"
+          class="h-11 px-5 rounded-2xl bg-marca-500 hover:bg-marca-400 active:scale-95 transition text-white text-sm font-medium shadow-lg shadow-marca-500/30 disabled:opacity-50 disabled:cursor-not-allowed">
+          Consultar
+        </button>
+      </div>
+      <p class="text-white/30 text-[11px] mt-2 text-center">Enter para enviar · Shift + Enter para nueva línea</p>
+    </footer>
+  </main>
+
+</body>
+<!-- cdn axios -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.20.0/axios.min.js"></script>
+
+<script>
+    //javascript
+  const chat = document.getElementById("chat");
+  const inputMensaje = document.getElementById("mensaje");
+  const btnEnviar = document.getElementById("btnEnviar");
+
+  // agrega una burbuja al chat ("usuario" o "ia")
+  function agregarMensaje(texto, autor) {
+    const fila = document.createElement("div");
+    const burbuja = document.createElement("div");
+    burbuja.textContent = texto;
+
+    if (autor === "usuario") {
+      fila.className = "flex justify-end animate-aparecer";
+      burbuja.className = "max-w-[80%] rounded-2xl rounded-tr-sm bg-marca-500 text-white px-4 py-2.5 text-sm shadow whitespace-pre-wrap";
+      fila.appendChild(burbuja);
+    } else {
+      fila.className = "flex gap-2 animate-aparecer";
+      fila.innerHTML = '<div class="w-8 h-8 shrink-0 rounded-full bg-marca-500 flex items-center justify-center text-sm">🤖</div>';
+      burbuja.className = "max-w-[80%] rounded-2xl rounded-tl-sm bg-white/90 text-slate-800 px-4 py-2.5 text-sm shadow whitespace-pre-wrap";
+      fila.appendChild(burbuja);
+    }
+
+    chat.appendChild(fila);
+    chat.scrollTop = chat.scrollHeight;
+    return burbuja;
+  }
+
+  async function consultarChat() {
+
+    let mensaje = inputMensaje.value.trim();
+    if (!mensaje) return;
+
+    agregarMensaje(mensaje, "usuario");
+    inputMensaje.value = "";
+    btnEnviar.disabled = true;
+    const burbujaIA = agregarMensaje("Escribiendo...", "ia");
+    burbujaIA.classList.add("animate-pulse");
+
+    try {
+      //codigo con la IA de OpenAI
+      const { data } = await axios.post("https://api.openai.com/v1/chat/completions", {
+        "model": "gpt-5",
+        "messages": [
+          { role: "system", content: "Actua como parte del equipo de ventas de nuestra tienda. responde en menos de 30 palabras. ofrecemos equipos electronicos. No responder a consultas que no sea de nuestra tienda"},
+            { role: "user", content: mensaje}
+          ]
+      },{
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer TOKEN_AQUI"
+        }
+      });
+
+      let respuesta = data.choices[0].message.content;
+      burbujaIA.textContent = respuesta;
+    } catch (error) {
+      burbujaIA.textContent = "Ocurrió un error al consultar. Intenta de nuevo.";
+      burbujaIA.classList.replace("text-slate-800", "text-red-600");
+    } finally {
+      burbujaIA.classList.remove("animate-pulse");
+      btnEnviar.disabled = false;
+      chat.scrollTop = chat.scrollHeight;
+      inputMensaje.focus();
+    }
+  }
+
+  // Enter envía, Shift + Enter hace salto de línea
+  inputMensaje.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      consultarChat();
+    }
+  });
+</script>
+
+</html>
